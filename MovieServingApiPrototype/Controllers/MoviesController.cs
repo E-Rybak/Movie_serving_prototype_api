@@ -20,6 +20,15 @@ namespace MovieServingApiPrototype.Controllers
             _appSettings = appSettings.Value;
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
+        {
+            var key = _appSettings.ApiKey;
+            _movieService.SetApiKey(key);
+
+            return Ok(_movieService.GetById(id));
+        }
+
         [HttpGet]
         public IEnumerable<MovieDto> GetAll()
         {
