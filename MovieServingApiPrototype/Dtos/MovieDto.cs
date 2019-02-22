@@ -11,6 +11,11 @@ namespace MovieServingApiPrototype.Dtos
         public string Title { get; set; }
         public int RunningTime { get; set; }
         public string Director { get; set; }
-        public IEnumerable<GenreDto> Genres { get; set; }
+        public List<GenreDto> Genres { get; set; }
+
+        public MovieDto()
+        {
+            Genres = new List<GenreDto>();
+        }
     }
 }

@@ -2,7 +2,6 @@
 using MovieServingApiPrototype.Helpers;
 using Newtonsoft.Json.Linq;
 using RestSharp;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -40,8 +39,16 @@ namespace MovieServingApiPrototype.Services
 
             //Populate movie with response data
             movie.Title = jsonData[MovieJsonKey.MovieTitle].ToString();
-            movie.Id = (int) jsonData[MovieJsonKey.Id];
-            movie.RunningTime = (int) jsonData[MovieJsonKey.RunningTime];
+            movie.Id = (int)jsonData[MovieJsonKey.Id];
+            movie.RunningTime = (int)jsonData[MovieJsonKey.RunningTime];
+
+            //Populate movie's genres list
+            var genres = jsonData[MovieJsonKey.Genres].ToList();
+            foreach (var genre in genres)
+            {
+                var genreDto = new GenreDto() { Name = genre[MovieJsonKey.GenreName].ToString() };
+                movie.Genres.Add(genreDto);
+            }
 
             return movie;
         }
@@ -52,5 +59,6 @@ namespace MovieServingApiPrototype.Services
 
             return Enumerable.Empty<MovieDto>();
         }
+
     }
 }
