@@ -2,6 +2,7 @@
 using MovieServingApiPrototype.Helpers;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,9 +10,12 @@ namespace MovieServingApiPrototype.Services
 {
     public interface IMovieService
     {
-        IEnumerable<MovieDto> GetAll();
-        MovieDto GetById(int id);
         void SetApiKey(string apiKey);
+
+        MovieDto GetById(int id);
+        IEnumerable<MovieDto> GetRunning(int page);
+        IEnumerable<MovieDto> GetPopular();
+        IEnumerable<MovieDto> SearchByTitle();
     }
 
     public class MovieService : IMovieService
@@ -41,6 +45,7 @@ namespace MovieServingApiPrototype.Services
             movie.Title = jsonData[MovieJsonKey.MovieTitle].ToString();
             movie.Id = (int)jsonData[MovieJsonKey.Id];
             movie.RunningTime = (int)jsonData[MovieJsonKey.RunningTime];
+            movie.Description = jsonData[MovieJsonKey.Overview].ToString();
 
             //Populate movie's genres list
             var genres = jsonData[MovieJsonKey.Genres].ToList();
@@ -50,15 +55,91 @@ namespace MovieServingApiPrototype.Services
                 movie.Genres.Add(genreDto);
             }
 
+            var posterFilePath = (string)jsonData[MovieJsonKey.PosterPath]; // poster file path
+
+            //Fetch configuration for baseurl and size, to build a full poster image path
+            url = "https://api.themoviedb.org/3/configuration?api_key=" + _apiKey;
+            var uri = new Uri(url);
+            _client.BaseUrl = uri;
+            response = _client.Execute(_request);
+            jsonData = JObject.Parse(response.Content);
+            
+            var baseSecureUrl = jsonData[MovieJsonKey.Images][MovieJsonKey.SecureBaseUrl].ToString();
+
+            movie.posterUrl = baseSecureUrl + "w342" + posterFilePath; // creates full poster image path and assigns it the movie
+
             return movie;
         }
 
-        public IEnumerable<MovieDto> GetAll()
+        public IEnumerable<MovieDto> GetRunning(int page)
         {
-            //Populate IEnumerable of movies. Populate IEnumerable of Genres.
+            //Requests running movies from tmdb and parse json response into JObject
+            _request = new RestRequest(Method.GET);
+            var url = "https://api.themoviedb.org/3/movie/now_playing" + "?api_key=" + _apiKey + "&page="+ page + "&region=dk";
+            _client = new RestClient(url);
+            var response = _client.Execute(_request);
+            var jsonData = JObject.Parse(response.Content);
 
-            return Enumerable.Empty<MovieDto>();
+            //Parse the result array of movies into a list of jtoken movies.
+            var results = jsonData[MovieJsonKey.Results].ToList();
+
+            //Request the genres and save the response 
+            _request = new RestRequest(Method.GET);
+            url = "https://api.themoviedb.org/3/genre/movie/list?api_key=" + _apiKey + "&language=en-us";
+            _client = new RestClient(url);
+            response = _client.Execute(_request);
+
+            //Runs through each movie in the result list and creates a new Dto witch is populated and added the movies list
+            //The genres prop is calling a private helper method, genreListFromIds, witch populates the movieDto's list of genres
+            //from the genre_ids which were passed in the results list. 
+            var movies = new List<MovieDto>();
+            foreach (var result in results)
+            {
+                var ids = result[MovieJsonKey.GenreIds].Values<int>().ToArray();
+                var movie = new MovieDto
+                {
+                    Title = result[MovieJsonKey.MovieTitle].ToString(),
+                    Description = result[MovieJsonKey.Overview].ToString(),
+                    Id = (int)result[MovieJsonKey.Id],
+                    posterUrl = "https://image.tmdb.org/t/p/w342" + result[MovieJsonKey.PosterPath].ToString(),
+                    Genres = genreListFromIds(ids, response),
+                    Director = ""
+                };
+                movies.Add(movie);
+            }
+            return movies; // returns the now populated list of running movies
         }
 
+        //Private helper method
+        private List<GenreDto> genreListFromIds(int[] ids, IRestResponse response)
+        {
+            //Parses data from response into list of jtokens, each of which contain a genre name
+            var jsonData = JObject.Parse(response.Content);
+            var genres = jsonData[MovieJsonKey.Genres].ToList();
+            var returnGenreList = new List<GenreDto>();
+
+            //runs through the different genre ids, finds them in the list of genres and adds the found genre to the 
+            //list of genres which is then returned the the movieDto.
+            foreach (var id in ids) 
+            {
+                var genre = genres.Find(g => (int)g[MovieJsonKey.Id] == id);
+                if (genre != null)
+                {
+                    var genreDto = new GenreDto() { Name = genre[MovieJsonKey.GenreName].ToString() };
+                    returnGenreList.Add(genreDto);
+                }
+            }
+            return returnGenreList;
+        }
+
+        public IEnumerable<MovieDto> GetPopular()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public IEnumerable<MovieDto> SearchByTitle()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

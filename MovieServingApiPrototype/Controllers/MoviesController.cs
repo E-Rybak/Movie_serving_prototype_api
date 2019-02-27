@@ -35,7 +35,7 @@ namespace MovieServingApiPrototype.Controllers
             var key = _appSettings.ApiKey;
             _movieService.SetApiKey(key);
 
-            return _movieService.GetAll();
+            return _movieService.GetRunning(1);
         }
     }
 }

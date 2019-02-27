@@ -12,6 +12,8 @@ namespace MovieServingApiPrototype.Dtos
         public int RunningTime { get; set; }
         public string Director { get; set; }
         public List<GenreDto> Genres { get; set; }
+        public string posterUrl { get; set; }
+        public string Description { get; set; }
 
         public MovieDto()
         {
