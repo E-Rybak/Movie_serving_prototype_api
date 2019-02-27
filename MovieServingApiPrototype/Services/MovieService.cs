@@ -110,6 +110,16 @@ namespace MovieServingApiPrototype.Services
             return movies; // returns the now populated list of running movies
         }
 
+        public IEnumerable<MovieDto> GetPopular()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public IEnumerable<MovieDto> SearchByTitle()
+        {
+            throw new System.NotImplementedException();
+        }
+
         //Private helper method
         private List<GenreDto> genreListFromIds(int[] ids, IRestResponse response)
         {
@@ -120,7 +130,7 @@ namespace MovieServingApiPrototype.Services
 
             //runs through the different genre ids, finds them in the list of genres and adds the found genre to the 
             //list of genres which is then returned the the movieDto.
-            foreach (var id in ids) 
+            foreach (var id in ids)
             {
                 var genre = genres.Find(g => (int)g[MovieJsonKey.Id] == id);
                 if (genre != null)
@@ -132,14 +142,5 @@ namespace MovieServingApiPrototype.Services
             return returnGenreList;
         }
 
-        public IEnumerable<MovieDto> GetPopular()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public IEnumerable<MovieDto> SearchByTitle()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }
