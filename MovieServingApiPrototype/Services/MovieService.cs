@@ -14,7 +14,7 @@ namespace MovieServingApiPrototype.Services
 
         MovieDto GetById(int id);
         IEnumerable<MovieDto> GetRunning(int page);
-        IEnumerable<MovieDto> GetPopular();
+        IEnumerable<MovieDto> GetPopular(int page);
         IEnumerable<MovieDto> SearchByTitle();
     }
 
@@ -73,9 +73,45 @@ namespace MovieServingApiPrototype.Services
 
         public IEnumerable<MovieDto> GetRunning(int page)
         {
-            //Requests running movies from tmdb and parse json response into JObject
+            return GetMoviesWithGenres(page, "https://api.themoviedb.org/3/movie/now_playing");
+        }
+
+        public IEnumerable<MovieDto> GetPopular(int page)
+        {
+            return GetMoviesWithGenres(page, "https://api.themoviedb.org/3/movie/popular");
+        }
+
+        public IEnumerable<MovieDto> SearchByTitle()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        //Private helper methods
+        private List<GenreDto> genreListFromIds(int[] ids, IRestResponse response)
+        {
+            //Parses data from response into list of jtokens, each of which contain a genre name
+            var jsonData = JObject.Parse(response.Content);
+            var genres = jsonData[MovieJsonKey.Genres].ToList();
+            var returnGenreList = new List<GenreDto>();
+
+            //runs through the different genre ids, finds them in the list of genres and adds the found genre to the 
+            //list of genres which is then returned the the movieDto.
+            foreach (var id in ids)
+            {
+                var genre = genres.Find(g => (int)g[MovieJsonKey.Id] == id);
+                if (genre != null)
+                {
+                    var genreDto = new GenreDto() { Name = genre[MovieJsonKey.GenreName].ToString() };
+                    returnGenreList.Add(genreDto);
+                }
+            }
+            return returnGenreList;
+        }
+        private IEnumerable<MovieDto> GetMoviesWithGenres(int page, string path)
+        {
+            //Requests running movies from tmdb and parses json response into JObject
             _request = new RestRequest(Method.GET);
-            var url = "https://api.themoviedb.org/3/movie/now_playing" + "?api_key=" + _apiKey + "&page="+ page + "&region=dk";
+            var url = path + "?api_key=" + _apiKey + "&page=" + page + "&region=dk";
             _client = new RestClient(url);
             var response = _client.Execute(_request);
             var jsonData = JObject.Parse(response.Content);
@@ -107,40 +143,7 @@ namespace MovieServingApiPrototype.Services
                 };
                 movies.Add(movie);
             }
-            return movies; // returns the now populated list of running movies
+            return movies;
         }
-
-        public IEnumerable<MovieDto> GetPopular()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public IEnumerable<MovieDto> SearchByTitle()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        //Private helper method
-        private List<GenreDto> genreListFromIds(int[] ids, IRestResponse response)
-        {
-            //Parses data from response into list of jtokens, each of which contain a genre name
-            var jsonData = JObject.Parse(response.Content);
-            var genres = jsonData[MovieJsonKey.Genres].ToList();
-            var returnGenreList = new List<GenreDto>();
-
-            //runs through the different genre ids, finds them in the list of genres and adds the found genre to the 
-            //list of genres which is then returned the the movieDto.
-            foreach (var id in ids)
-            {
-                var genre = genres.Find(g => (int)g[MovieJsonKey.Id] == id);
-                if (genre != null)
-                {
-                    var genreDto = new GenreDto() { Name = genre[MovieJsonKey.GenreName].ToString() };
-                    returnGenreList.Add(genreDto);
-                }
-            }
-            return returnGenreList;
-        }
-
     }
 }

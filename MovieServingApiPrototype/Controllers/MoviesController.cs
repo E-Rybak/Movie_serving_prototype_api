@@ -29,13 +29,22 @@ namespace MovieServingApiPrototype.Controllers
             return Ok(_movieService.GetById(id));
         }
 
-        [HttpGet]
-        public IEnumerable<MovieDto> GetAll()
+        [HttpGet("running/{page}")]
+        public IEnumerable<MovieDto> GetRunning(int page)
         {
             var key = _appSettings.ApiKey;
             _movieService.SetApiKey(key);
 
-            return _movieService.GetRunning(1);
+            return _movieService.GetRunning(page);
+        }
+
+        [HttpGet("popular/{page}")]
+        public IEnumerable<MovieDto> GetPopular(int page)
+        {
+            var key = _appSettings.ApiKey;
+            _movieService.SetApiKey(key);
+
+            return _movieService.GetPopular(page);
         }
     }
 }
